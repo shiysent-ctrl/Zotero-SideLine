@@ -1,0 +1,119 @@
+/* Zotero Sideline 设置页：沿用宿主主题，统一字段、按钮和状态的视觉层级。 */
+.sideline-prefs {
+  --sl-border: var(--color-border50, rgba(127, 127, 127, .3));
+  --sl-surface: var(--material-background, Canvas);
+  --sl-muted: var(--fill-secondary, GrayText);
+  --sl-accent: var(--accent-blue, #4072e5);
+  --sl-soft: var(--accent-blue10, rgba(64, 114, 229, .12));
+  color: var(--fill-primary, CanvasText);
+  display: block;
+  padding: 4px 2px 24px;
+  line-height: 1.5;
+}
+.sideline-prefs .sideline-section { margin: 0 0 24px; min-width: 0; }
+.sideline-prefs h2 { font-size: 1.2em; margin: 0 0 12px; }
+.sideline-prefs h3 { font-size: 1.05em; margin: 0; }
+.sideline-prefs .sideline-card {
+  padding: 16px;
+  margin: 12px 0;
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 10px;
+}
+.sideline-prefs .sideline-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+.sideline-prefs .sideline-api-card .sideline-heading > button { margin-inline-start: auto; flex: none; }
+.sideline-prefs .sideline-agent-card .sideline-heading > button { margin-inline-start: auto; flex: none; }
+.sideline-prefs .sideline-agent-row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+.sideline-prefs .sideline-agent-row > .sideline-field { flex: 1 1 14em; margin-bottom: 0; }
+.sideline-prefs .sideline-agent-row > button { flex: none; }
+.sideline-prefs .sideline-agent-effort-row > .sideline-field { flex: 1 1 10em; max-width: 16em; }
+.sideline-prefs .sideline-agent-effort-row > .sideline-agent-timeout-field { flex: 0 1 9em; max-width: 10em; }
+.sideline-prefs .sideline-api-card .sideline-status[data-state="idle"] { color: var(--accent-red, CanvasText); }
+.sideline-prefs .sideline-route-section .sideline-heading h2 { margin: 0; }
+.sideline-prefs .sideline-route-section .sideline-heading > button { margin-inline-start: auto; }
+.sideline-prefs .sideline-route-section .sideline-status[data-state="idle"] { color: var(--accent-red, CanvasText); }
+.sideline-prefs .sideline-channel-combo { max-width: 28em; }
+.sideline-prefs .sideline-channel-combo input[readonly] { cursor: pointer; }
+.sideline-prefs .sideline-channel-option { display: block; width: 100%; border: 0; border-radius: 4px; padding: 8px 10px; font: inherit; text-align: start; background: var(--sl-surface); color: inherit; cursor: pointer; }
+.sideline-prefs .sideline-channel-option:hover, .sideline-prefs .sideline-channel-option:focus-visible { background: var(--sl-soft); }
+.sideline-prefs select[hidden] { display: none; }
+.sideline-prefs .sideline-model-input input[readonly] { cursor: pointer; }
+.sideline-prefs .sideline-api-model-row { display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px; }
+.sideline-prefs .sideline-api-model-row .sideline-model-combo { flex: 1 1 12em; max-width: 28em; }
+.sideline-prefs .sideline-api-model-row > button { flex: none; }
+.sideline-prefs .sideline-vision-model-row { align-items: flex-end; }
+.sideline-prefs .sideline-vision-model-row .sideline-vision-model-field { flex: 1 1 12em; max-width: 28em; margin-bottom: 0; }
+.sideline-prefs .sideline-vision-model-row .sideline-vision-timeout-field { flex: 0 1 9em; max-width: 10em; margin-bottom: 0; }
+.sideline-prefs .sideline-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.sideline-prefs .sideline-api-parameters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sideline-prefs .sideline-field { min-width: 0; margin-bottom: 12px; }
+.sideline-prefs .sideline-field > label { display: block; font-weight: 500; margin-bottom: 5px; }
+.sideline-prefs input:not([type="checkbox"]):not([type="hidden"]),
+.sideline-prefs select, .sideline-prefs textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  background: var(--sl-surface);
+  color: inherit;
+  font: inherit;
+}
+.sideline-prefs input:not([type="checkbox"]):not([type="hidden"]), .sideline-prefs select { min-height: 34px; }
+.sideline-prefs input:disabled, .sideline-prefs select:disabled { opacity: .55; }
+.sideline-prefs .sideline-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.sideline-prefs .sideline-button {
+  box-sizing: border-box;
+  min-height: 34px;
+  margin: 0;
+  padding: 7px 14px;
+  border: 1px solid var(--sl-border);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 500;
+  color: inherit;
+  background: color-mix(in srgb, var(--sl-surface) 88%, var(--fill-primary, CanvasText));
+  cursor: pointer;
+}
+.sideline-prefs .sideline-primary { background: var(--sl-soft); color: var(--sl-accent); border-color: color-mix(in srgb, var(--sl-accent) 40%, var(--sl-border)); }
+.sideline-prefs .sideline-button:hover:not(:disabled) { border-color: var(--sl-accent); background: var(--sl-soft); }
+.sideline-prefs .sideline-button:disabled { cursor: default; opacity: .5; }
+.sideline-prefs :is(input, select, textarea, button, summary):focus-visible { outline: 2px solid var(--sl-accent); outline-offset: 2px; }
+.sideline-prefs .sideline-unit-field { display: flex; align-items: center; gap: 8px; }
+.sideline-prefs .sideline-unit-field input { flex: 1; }
+.sideline-prefs .sideline-unit { flex: none; color: var(--sl-muted); font-size: .9em; }
+.sideline-prefs .sideline-check { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 12px; }
+.sideline-prefs .sideline-check input { flex: none; margin: 0; align-self: center; }
+.sideline-prefs .sideline-note, .sideline-prefs .sideline-hint { font-size: .9em; color: var(--sl-muted); line-height: 1.6; }
+.sideline-prefs .sideline-note { margin: 8px 0 12px; }
+.sideline-prefs .sideline-hint { display: block; margin-top: 5px; }
+.sideline-prefs ul.sideline-note { padding-inline-start: 22px; }
+.sideline-prefs li { margin: 5px 0; }
+.sideline-prefs .sideline-warning { color: var(--accent-red, #db2c3a); font-size: .9em; margin-bottom: 8px; overflow-wrap: anywhere; }
+.sideline-prefs .sideline-warning:empty, .sideline-prefs .sideline-note:empty { display: none; }
+.sideline-prefs .sideline-details { border: 1px solid var(--sl-border); border-radius: 6px; margin: 8px 0; padding: 0 12px; }
+.sideline-prefs summary { padding: 9px 0; cursor: pointer; }
+.sideline-prefs .sideline-details[open] > summary { margin-bottom: 8px; border-bottom: 1px solid var(--sl-border); }
+.sideline-prefs .sideline-textarea { min-height: 5em; resize: vertical; margin-bottom: 12px; font-size: .95em; }
+.sideline-prefs .sideline-prompt-state { float: inline-end; font-size: .85em; color: var(--sl-muted); margin-inline-start: 10px; }
+.sideline-prefs .sideline-status { display: inline-flex; align-items: center; gap: 6px; color: var(--sl-muted); font-size: .9em; overflow-wrap: anywhere; }
+.sideline-prefs .sideline-status::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.sideline-prefs .sideline-status[data-state="busy"], .sideline-prefs .sideline-status[data-state="catalog"] { color: var(--sl-accent); }
+.sideline-prefs .sideline-status[data-state="pass"] { color: var(--accent-green, #26834a); }
+.sideline-prefs .sideline-status[data-state="fail"] { color: var(--accent-red, #db2c3a); }
+.sideline-prefs .sideline-diagnostics { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9em; font-family: inherit; user-select: text; max-height: 18em; overflow: auto; margin: 0 0 12px; }
+.sideline-prefs .sideline-diagnostics:empty::before { content: "暂无诊断，请先检测。"; color: var(--sl-muted); }
+.sideline-prefs .sideline-model-combo { position: relative; min-width: 0; }
+.sideline-prefs .sideline-model-input { display: flex; align-items: stretch; gap: 6px; }
+.sideline-prefs .sideline-model-input input { flex: 1; min-width: 0; }
+.sideline-prefs .sideline-model-toggle { flex: none; min-width: 34px; padding-inline: 8px; }
+.sideline-prefs .sideline-model-popup { position: absolute; z-index: 20; inset-inline: 0; top: calc(100% + 4px); padding: 8px; background: var(--sl-surface); border: 1px solid var(--sl-border); border-radius: 6px; box-shadow: 0 3px 12px rgb(0 0 0 / 20%); }
+.sideline-prefs .sideline-model-popup[hidden] { display: none; }
+.sideline-prefs .sideline-model-popup select { margin-top: 6px; min-height: 10em; }
+@media (max-width: 560px) {
+  .sideline-prefs .sideline-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .sideline-prefs .sideline-card { padding: 12px; }
+}

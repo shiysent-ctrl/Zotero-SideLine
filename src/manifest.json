@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "Zotero Sideline",
+  "version": "1.0.0",
+  "description": "PDF 阅读器内的对话侧栏：选中文字即可解释/翻译，四个功能一个下拉栏，材料按需加入；配色与排版跟随 Zotero 主题的现代对话皮肤，回答是独立卡片，点一下即可选中并一次写入子笔记；回答带可点击页码、重点可在预览后写入批注、可按 paper-review 规范做总结；模型走 OpenAI 兼容 API 或本机 Codex、OpenCode、DeepSeek Harness，会话以 JSON 附件随条目同步。",
+  "author": "shiys",
+  "icons": {
+    "48": "content/icons/sideline.svg",
+    "96": "content/icons/sideline.svg"
+  },
+  "applications": {
+    "zotero": {
+      "id": "zotero-sideline@shiys.local",
+      "update_url": "https://raw.githubusercontent.com/shiysent-ctrl/Zotero-SideLine/main/updates.json",
+      "strict_min_version": "10.0",
+      "strict_max_version": "10.*"
+    }
+  }
+}

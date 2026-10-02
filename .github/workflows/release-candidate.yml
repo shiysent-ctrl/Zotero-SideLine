@@ -1,0 +1,31 @@
+name: Windows release candidate
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check standalone sources, tests and reproducible package
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1
+      - name: Upload candidate artifacts (no publishing)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sideline-windows-candidate
+          path: |
+            runtime/release-*/*.xpi
+            runtime/release-*/*-source.zip
+            runtime/release-*/SHA256SUMS.txt
+            runtime/release-*/validation.json
+          if-no-files-found: error
