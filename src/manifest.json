@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "Zotero Sideline",
+  "version": "1.0.0",
+  "description": "Zotero PDF 阅读器对话侧栏：全文总结、解释选区、文本翻译、自动高亮及批次撤销；支持材料添加、对话检索、回复保存为子笔记、Markdown 与离线公式。模型使用兼容 API 或本机 Codex、OpenCode、DeepSeek Harness，会话保存为文献条目下的 JSON 附件。",
+  "author": "shiys",
+  "icons": {
+    "48": "content/icons/sideline.svg",
+    "96": "content/icons/sideline.svg"
+  },
+  "applications": {
+    "zotero": {
+      "id": "zotero-sideline@shiys.local",
+      "update_url": "https://raw.githubusercontent.com/shiysent-ctrl/Zotero-SideLine/main/updates.json",
+      "strict_min_version": "10.0",
+      "strict_max_version": "10.*"
+    }
+  }
+}

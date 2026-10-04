@@ -1,0 +1,6 @@
+# Preserve source bytes so Git checkouts reproduce the released XPI.
+* -text
+*.png binary
+*.woff2 binary
+*.xpi binary
+*.zip binary

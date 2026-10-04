@@ -1,0 +1,572 @@
+<!--
+  Zotero Sideline 设置页 XHTML 片段：统一字段、操作、状态与折叠说明。
+  输入输出：完整 preference 键绑定原有设置；超时的可见秒数由控制器转换到隐藏毫秒字段。
+  依赖：Zotero 首选项片段包装器（不能添加 XML 声明）、prefs-pane.js 和 prefs-pane.css。
+-->
+<vbox id="sideline-prefs-root" class="sideline-prefs">
+  <html:section class="sideline-section sideline-route-section">
+    <html:div class="sideline-heading">
+      <html:h2>默认处理通道</html:h2>
+      <html:span id="sideline-route-status" class="sideline-status" data-state="idle" role="status" aria-live="polite">未检测</html:span>
+      <html:button id="sideline-route-test" type="button" class="sideline-button sideline-primary">测试连接</html:button>
+    </html:div>
+    <html:div id="sideline-channel-combo" class="sideline-model-combo sideline-channel-combo">
+      <html:div class="sideline-model-input">
+        <html:input id="sideline-channel-display" type="text" readonly="readonly" role="combobox" aria-label="默认处理通道" aria-expanded="false" aria-haspopup="listbox" aria-controls="sideline-channel-popup"/>
+        <html:button id="sideline-channel-toggle" type="button" class="sideline-button sideline-model-toggle" aria-label="展开处理通道">▾</html:button>
+      </html:div>
+      <html:div id="sideline-channel-popup" class="sideline-model-popup" role="listbox" aria-label="处理通道" hidden="hidden">
+        <html:button id="sideline-channel-api" type="button" class="sideline-channel-option" role="option" aria-selected="false">API</html:button>
+        <html:button id="sideline-channel-agent" type="button" class="sideline-channel-option" role="option" aria-selected="false">Agent</html:button>
+      </html:div>
+      <html:select id="sideline-text-channel" preference="extensions.zotero.sideline.textChannel" hidden="hidden">
+        <html:option value="api">API</html:option>
+        <html:option value="agent">Agent</html:option>
+      </html:select>
+    </html:div>
+    <html:details class="sideline-details">
+      <html:summary>检测详情与诊断</html:summary>
+      <html:pre id="sideline-route-result" class="sideline-diagnostics"/>
+      <html:div class="sideline-actions">
+        <html:button id="sideline-route-copy" type="button" class="sideline-button">复制诊断</html:button>
+      </html:div>
+    </html:details>
+  </html:section>
+  <html:section class="sideline-section">
+    <html:h2>API 接口</html:h2>
+    <html:div class="sideline-card sideline-api-card">
+      <html:div class="sideline-heading">
+        <html:h3>文字接口</html:h3>
+        <html:span id="sideline-text-status" class="sideline-status" data-state="idle" role="status" aria-live="polite">未检测</html:span>
+        <html:button id="sideline-text-test" type="button" class="sideline-button sideline-primary">测试连接</html:button>
+      </html:div>
+      <html:div class="sideline-grid">
+        <html:div class="sideline-field">
+          <html:label for="sideline-text-api">API 基址</html:label>
+          <html:input id="sideline-text-api" type="text" preference="extensions.zotero.sideline.textApi" placeholder="https://api.deepseek.com/v1"/>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-text-key">API 密钥</html:label>
+          <html:input id="sideline-text-key" type="password" preference="extensions.zotero.sideline.textSecretKey"/>
+        </html:div>
+      </html:div>
+      <html:div class="sideline-field">
+        <html:label for="sideline-text-model">模型（可编辑）</html:label>
+        <html:div class="sideline-api-model-row">
+          <html:div id="sideline-text-combo" class="sideline-model-combo">
+            <html:div class="sideline-model-input">
+              <html:input id="sideline-text-model" type="text" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-controls="sideline-text-models" preference="extensions.zotero.sideline.textModel"/>
+              <html:button id="sideline-text-model-toggle" type="button" class="sideline-button sideline-model-toggle" aria-label="展开模型列表">▾</html:button>
+            </html:div>
+            <html:div id="sideline-text-model-popup" class="sideline-model-popup" hidden="hidden">
+              <html:input id="sideline-text-model-filter" type="search" placeholder="搜索模型名称或 ID" aria-label="搜索模型"/>
+              <html:select id="sideline-text-models" size="8" aria-label="可选模型"/>
+              <html:span id="sideline-text-model-count" class="sideline-hint"/>
+            </html:div>
+          </html:div>
+          <html:button id="sideline-text-refresh" type="button" class="sideline-button">刷新模型</html:button>
+        </html:div>
+      </html:div>
+      <html:div class="sideline-grid sideline-api-parameters">
+        <html:div class="sideline-field">
+          <html:label for="sideline-temperature">温度</html:label>
+          <html:input id="sideline-temperature" type="number" preference="extensions.zotero.sideline.temperature" min="0" step="0.1" placeholder="0.7"/>
+          <html:small class="sideline-hint">默认 0.7；可用范围以服务商为准。</html:small>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-max-tokens">最大输出</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-max-tokens" type="number" preference="extensions.zotero.sideline.maxTokens" min="1" step="1" placeholder="4096"/>
+            <html:span class="sideline-unit">tokens</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 4096；上限以所选模型为准。</html:small>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-text-timeout-seconds">请求超时</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-text-timeout-seconds" type="number" min="0.001" max="2147483.647" step="0.001" placeholder="120"/>
+            <html:span class="sideline-unit">秒</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 120 秒。</html:small>
+        </html:div>
+        <html:input id="sideline-text-timeout-ms" type="hidden" preference="extensions.zotero.sideline.requestTimeoutMs"/>
+      </html:div>
+      <html:label class="sideline-check" for="sideline-stream">
+        <html:input id="sideline-stream" type="checkbox" preference="extensions.zotero.sideline.stream"/>
+        
+        
+        流式输出
+      
+      
+      </html:label>
+      <html:div id="sideline-budget-warning" class="sideline-warning" role="status"/>
+      <html:details class="sideline-details">
+        <html:summary>检测详情与诊断</html:summary>
+        <html:pre id="sideline-text-result" class="sideline-diagnostics"/>
+        <html:div class="sideline-actions">
+          <html:button id="sideline-text-copy" type="button" class="sideline-button">复制诊断</html:button>
+        </html:div>
+      </html:details>
+    </html:div>
+    <html:div class="sideline-card sideline-api-card">
+      <html:div class="sideline-heading">
+        <html:h3>视觉接口</html:h3>
+        <html:span id="sideline-vision-status" class="sideline-status" data-state="idle" role="status" aria-live="polite">未检测</html:span>
+        <html:button id="sideline-vision-test" type="button" class="sideline-button sideline-primary">测试连接</html:button>
+      </html:div>
+      <html:p class="sideline-note">图片使用视觉 API。沿用文字接口的基址与密钥时，仍需指定视觉模型。</html:p>
+      <html:label class="sideline-check" for="sideline-vision-use-text">
+        <html:input id="sideline-vision-use-text" type="checkbox" preference="extensions.zotero.sideline.visionUseText"/>
+        
+        
+        沿用文字接口的基址与密钥
+      
+      
+      </html:label>
+      <html:div class="sideline-grid">
+        <html:div class="sideline-field">
+          <html:label for="sideline-vision-api">独立 API 基址</html:label>
+          <html:input id="sideline-vision-api" type="text" preference="extensions.zotero.sideline.visionApi"/>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-vision-key">独立 API 密钥</html:label>
+          <html:input id="sideline-vision-key" type="password" preference="extensions.zotero.sideline.visionSecretKey"/>
+        </html:div>
+      </html:div>
+      <html:div class="sideline-field">
+        <html:div class="sideline-api-model-row sideline-vision-model-row">
+          <html:div class="sideline-field sideline-vision-model-field">
+            <html:label for="sideline-vision-model">视觉模型（可编辑）</html:label>
+            <html:div id="sideline-vision-combo" class="sideline-model-combo">
+              <html:div class="sideline-model-input">
+                <html:input id="sideline-vision-model" type="text" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-controls="sideline-vision-models" preference="extensions.zotero.sideline.visionModel"/>
+                <html:button id="sideline-vision-model-toggle" type="button" class="sideline-button sideline-model-toggle" aria-label="展开模型列表">▾</html:button>
+              </html:div>
+              <html:div id="sideline-vision-model-popup" class="sideline-model-popup" hidden="hidden">
+                <html:input id="sideline-vision-model-filter" type="search" placeholder="搜索模型名称或 ID" aria-label="搜索模型"/>
+                <html:select id="sideline-vision-models" size="8" aria-label="可选模型"/>
+                <html:span id="sideline-vision-model-count" class="sideline-hint"/>
+              </html:div>
+            </html:div>
+          </html:div>
+          <html:button id="sideline-vision-refresh" type="button" class="sideline-button">刷新模型</html:button>
+          <html:div class="sideline-field sideline-vision-timeout-field">
+            <html:label for="sideline-vision-timeout-seconds">请求超时</html:label>
+            <html:div class="sideline-unit-field">
+              <html:input id="sideline-vision-timeout-seconds" type="number" min="0.001" max="2147483.647" step="0.001" placeholder="120"/>
+              <html:span class="sideline-unit">秒</html:span>
+            </html:div>
+            <html:input id="sideline-vision-timeout-ms" type="hidden" preference="extensions.zotero.sideline.visionRequestTimeoutMs"/>
+          </html:div>
+        </html:div>
+      </html:div>
+      <html:details class="sideline-details">
+        <html:summary>检测详情与诊断</html:summary>
+        <html:pre id="sideline-vision-result" class="sideline-diagnostics"/>
+        <html:div class="sideline-actions">
+          <html:button id="sideline-vision-copy" type="button" class="sideline-button">复制诊断</html:button>
+        </html:div>
+      </html:details>
+    </html:div>
+    <html:details class="sideline-details">
+      <html:summary>接口说明</html:summary>
+      <html:ul class="sideline-note">
+        <html:li>密钥保存在 Zotero 首选项中，复制诊断时隐藏密钥。</html:li>
+        <html:li>默认处理通道在设置最前面选择。Agent 模式中，文字与图片均交给当前 Agent。</html:li>
+        <html:li>检测结果只对应当前配置；修改接口、模型或参数后需重新检测。</html:li>
+      </html:ul>
+    </html:details>
+  </html:section>
+  <html:section class="sideline-section">
+    <html:h2>Agent 接口</html:h2>
+    <html:div class="sideline-card sideline-agent-card">
+      <html:div class="sideline-heading">
+        <html:h3>本地 Agent</html:h3>
+        <html:span id="sideline-agent-status" class="sideline-status" data-state="idle" role="status" aria-live="polite">未检测</html:span>
+        <html:button id="sideline-agent-test" type="button" class="sideline-button sideline-primary">测试连接</html:button>
+      </html:div>
+      <html:div class="sideline-agent-row sideline-agent-install-row">
+        <html:button id="sideline-agent-scan" type="button" class="sideline-button sideline-primary">扫描本地 Agent</html:button>
+        <html:div class="sideline-field">
+          <html:div id="sideline-agent-install-combo" class="sideline-model-combo">
+            <html:div class="sideline-model-input">
+              <html:input id="sideline-agent-install-display" type="text" readonly="readonly" role="combobox" aria-label="选择 Agent" aria-expanded="false" aria-haspopup="listbox" aria-controls="sideline-agent-install-options"/>
+              <html:button id="sideline-agent-install-toggle" type="button" class="sideline-button sideline-model-toggle" aria-label="展开 Agent 列表">▾</html:button>
+            </html:div>
+            <html:div id="sideline-agent-install-popup" class="sideline-model-popup" hidden="hidden">
+              <html:select id="sideline-agent-install-options" size="6" aria-label="可用 Agent"/>
+            </html:div>
+          </html:div>
+          <html:select id="sideline-agent-install" hidden="hidden" aria-label="选择 Agent" preference="extensions.zotero.sideline.agentInstallId"/>
+        </html:div>
+      </html:div>
+      <html:p class="sideline-note">支持 Codex、OpenCode、DeepSeek Harness。选择后可离线检测。</html:p>
+      <html:div class="sideline-agent-row sideline-agent-directory-row">
+        <html:div class="sideline-field">
+          <html:input id="sideline-agent-directory" type="text" placeholder="自定义Agent路径" aria-label="自定义Agent路径"/>
+        </html:div>
+        <html:button id="sideline-agent-add" type="button" class="sideline-button">添加路径</html:button>
+        <html:button id="sideline-agent-remove" type="button" class="sideline-button">重置路径</html:button>
+      </html:div>
+      <html:div class="sideline-agent-row sideline-agent-model-row">
+        <html:button id="sideline-agent-probe" type="button" class="sideline-button">离线检测模型</html:button>
+        <html:div class="sideline-field">
+          <html:label for="sideline-agent-model">模型</html:label>
+          <html:div id="sideline-agent-combo" class="sideline-model-combo">
+            <html:div class="sideline-model-input">
+              <html:input id="sideline-agent-model" type="text" readonly="readonly" role="combobox" aria-label="选择模型" aria-expanded="false" aria-haspopup="listbox" aria-controls="sideline-agent-models" preference="extensions.zotero.sideline.agentModel"/>
+              <html:button id="sideline-agent-model-toggle" type="button" class="sideline-button sideline-model-toggle" aria-label="展开模型列表">▾</html:button>
+            </html:div>
+            <html:div id="sideline-agent-model-popup" class="sideline-model-popup" hidden="hidden">
+              <html:input id="sideline-agent-model-filter" type="search" placeholder="搜索模型名称或 ID" aria-label="搜索模型"/>
+              <html:select id="sideline-agent-models" size="8" aria-label="可选模型"/>
+              <html:span id="sideline-agent-model-count" class="sideline-hint"/>
+            </html:div>
+          </html:div>
+        </html:div>
+      </html:div>
+      <html:div class="sideline-agent-row sideline-agent-effort-row">
+        <html:button id="sideline-agent-model-refresh" type="button" class="sideline-button">验证请求协议</html:button>
+        <html:div class="sideline-field">
+          <html:label for="sideline-agent-effort">思考强度</html:label>
+          <html:div id="sideline-agent-effort-combo" class="sideline-model-combo">
+            <html:div class="sideline-model-input">
+              <html:input id="sideline-agent-effort-display" type="text" readonly="readonly" role="combobox" aria-label="思考强度" aria-expanded="false" aria-haspopup="listbox" aria-controls="sideline-agent-effort-options"/>
+              <html:button id="sideline-agent-effort-toggle" type="button" class="sideline-button sideline-model-toggle" aria-label="展开思考强度列表">▾</html:button>
+            </html:div>
+            <html:div id="sideline-agent-effort-popup" class="sideline-model-popup" hidden="hidden">
+              <html:select id="sideline-agent-effort-options" size="5" aria-label="可选思考强度"/>
+            </html:div>
+          </html:div>
+          <html:select id="sideline-agent-effort" hidden="hidden" aria-label="思考强度" preference="extensions.zotero.sideline.agentEffort"/>
+        </html:div>
+        <html:div class="sideline-field sideline-agent-timeout-field">
+          <html:label for="sideline-agent-timeout-seconds">Agent 超时</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-agent-timeout-seconds" type="number" min="0.001" max="2147483.647" step="0.001" placeholder="180"/>
+            <html:span class="sideline-unit">秒</html:span>
+          </html:div>
+          <html:input id="sideline-agent-timeout-ms" type="hidden" preference="extensions.zotero.sideline.agentTimeoutMs"/>
+        </html:div>
+      </html:div>
+      <html:label class="sideline-check" for="sideline-agent-search">
+        <html:input id="sideline-agent-search" type="checkbox" preference="extensions.zotero.sideline.agentSearch"/>
+        允许联网检索（搜索及网页读取）
+      </html:label>
+      <html:div id="sideline-agent-web-status" class="sideline-note" role="status"/>
+      <html:div id="sideline-agent-warning" class="sideline-warning" role="status"/>
+      <html:details class="sideline-details">
+        <html:summary>检测详情与诊断</html:summary>
+        <html:pre id="sideline-agent-result" class="sideline-diagnostics"/>
+        <html:div class="sideline-actions">
+          <html:button id="sideline-agent-copy" type="button" class="sideline-button">复制诊断</html:button>
+        </html:div>
+      </html:details>
+    </html:div>
+    <html:details class="sideline-details">
+      <html:summary>扫描与权限说明</html:summary>
+      <html:ul class="sideline-note">
+        <html:li>扫描只在点击时进行，查找默认目录、PATH、npm 全局目录和原生应用；不执行未知程序。</html:li>
+        <html:li>离线检测读取版本、登录状态与协议及模型目录，不发起推理。它不能代替真实请求验证。</html:li>
+        <html:li>DeepSeek Harness 使用插件自有权限配置。首次 ACP 启动可能初始化 ~/.dsh，启动前会提示。</html:li>
+        <html:li>联网开关允许搜索及网页读取；文件与终端权限默认拒绝。是否能检索需实际验证。</html:li>
+      </html:ul>
+    </html:details>
+  </html:section>
+  <html:section class="sideline-section sideline-other-section">
+    <html:h2>其它</html:h2>
+    <html:section class="sideline-card">
+      <html:div class="sideline-heading"><html:h3>功能</html:h3></html:div>
+      <html:p class="sideline-note">展开需要修改的功能；留空使用内置提示词；提示词不显示在对话里；划词弹窗的翻译功能与文本翻译提示词一致</html:p>
+      <html:details class="sideline-details">
+        <html:summary>
+          
+          
+          全文总结
+          
+          
+          <html:span id="sideline-prompt-summarize-state" class="sideline-prompt-state">使用内置</html:span>
+        </html:summary>
+        <html:label class="sideline-hint" for="sideline-prompt-summarize">留空使用内置提示词；文本框可向下拖动调整高度。</html:label>
+        <html:textarea id="sideline-prompt-summarize" rows="3" class="sideline-textarea" preference="extensions.zotero.sideline.promptSummarize"/>
+      </html:details>
+      <html:details class="sideline-details">
+        <html:summary>
+          
+          
+          解释选区
+          
+          
+          <html:span id="sideline-prompt-explain-state" class="sideline-prompt-state">使用内置</html:span>
+        </html:summary>
+        <html:label class="sideline-hint" for="sideline-prompt-explain">留空使用内置提示词；文本框可向下拖动调整高度。</html:label>
+        <html:textarea id="sideline-prompt-explain" rows="3" class="sideline-textarea" preference="extensions.zotero.sideline.promptExplain"/>
+      </html:details>
+      <html:details class="sideline-details">
+        <html:summary>
+          
+          
+          文本翻译
+          
+          
+          <html:span id="sideline-prompt-translate-state" class="sideline-prompt-state">使用内置</html:span>
+        </html:summary>
+        <html:label class="sideline-hint" for="sideline-prompt-translate">留空使用内置提示词；文本框可向下拖动调整高度。</html:label>
+        <html:textarea id="sideline-prompt-translate" rows="3" class="sideline-textarea" preference="extensions.zotero.sideline.promptTranslate"/>
+      </html:details>
+      <html:details class="sideline-details">
+        <html:summary>
+          
+          
+          自动高亮
+          
+          
+          <html:span id="sideline-prompt-highlight-state" class="sideline-prompt-state">使用内置</html:span>
+        </html:summary>
+        <html:label class="sideline-hint" for="sideline-prompt-highlight">留空使用内置提示词；文本框可向下拖动调整高度。</html:label>
+        <html:textarea id="sideline-prompt-highlight" rows="3" class="sideline-textarea" preference="extensions.zotero.sideline.promptHighlight"/>
+      </html:details>
+    </html:section>
+    <html:section class="sideline-card">
+      <html:div class="sideline-heading"><html:h3>上下文</html:h3></html:div>
+      <html:div class="sideline-field">
+        <html:label for="sideline-context-mode">默认上下文模式</html:label>
+        <html:select id="sideline-context-mode" preference="extensions.zotero.sideline.contextMode">
+          <html:option value="metadata">仅条目元数据</html:option>
+          <html:option value="metadata+fulltext">元数据 + PDF 全文</html:option>
+          <html:option value="fulltext">仅 PDF 全文</html:option>
+        </html:select>
+      </html:div>
+      <html:div class="sideline-grid">
+        <html:div class="sideline-field">
+          <html:label for="sideline-max-context">全文最大字符数</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-max-context" type="number" preference="extensions.zotero.sideline.maxContextChars" min="1" step="1" placeholder="24000"/>
+            <html:span class="sideline-unit">字符</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 24000。</html:small>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-history-turns">携带历史轮数</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-history-turns" type="number" preference="extensions.zotero.sideline.historyTurns" min="0" step="1" placeholder="4"/>
+            <html:span class="sideline-unit">轮</html:span>
+          </html:div>
+          <html:small class="sideline-hint">用于文字 API；Agent 延续对应的原生会话。</html:small>
+        </html:div>
+      </html:div>
+      <html:details class="sideline-details">
+        <html:summary>
+          
+          
+          系统提示词
+          
+          
+          <html:span id="sideline-system-prompt-state" class="sideline-prompt-state">使用内置</html:span>
+        </html:summary>
+        <html:label class="sideline-hint" for="sideline-system-prompt">留空使用内置提示词；文本框可向下拖动调整高度。</html:label>
+        <html:textarea id="sideline-system-prompt" rows="3" class="sideline-textarea" preference="extensions.zotero.sideline.systemPrompt"/>
+      </html:details>
+    </html:section>
+    <html:section class="sideline-card">
+      <html:div class="sideline-heading"><html:h3>阅读器侧栏</html:h3></html:div>
+      <html:p class="sideline-note">在 PDF 阅读器工具栏或侧栏点击「AI」即可开关对话面板。</html:p>
+      <html:label class="sideline-check" for="sideline-reader-panel-enabled">
+        <html:input id="sideline-reader-panel-enabled" type="checkbox" preference="extensions.zotero.sideline.readerPanelEnabled"/>
+        
+        
+        启用阅读器侧栏对话
+      
+      
+      </html:label>
+      <html:div class="sideline-grid">
+        <html:div class="sideline-field">
+          <html:label for="sideline-panel-width">面板宽度</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-panel-width" type="number" preference="extensions.zotero.sideline.readerPanelWidth" min="1" step="1" placeholder="380"/>
+            <html:span class="sideline-unit">像素</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 380。</html:small>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-note-hits">子笔记检索命中数</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-note-hits" type="number" preference="extensions.zotero.sideline.noteSearchMaxHits" min="1" step="1" placeholder="3"/>
+            <html:span class="sideline-unit">条</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 3。</html:small>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-file-chars">加入文件的字符上限</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-file-chars" type="number" preference="extensions.zotero.sideline.fileMaxChars" min="1" step="1" placeholder="20000"/>
+            <html:span class="sideline-unit">字符</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 20000。</html:small>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-coverage-pages">覆盖统计扫描页数</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-coverage-pages" type="number" preference="extensions.zotero.sideline.coverageMaxPages" min="0" step="1" placeholder="0"/>
+            <html:span class="sideline-unit">页</html:span>
+          </html:div>
+          <html:small class="sideline-hint">0 表示全部页面。</html:small>
+        </html:div>
+      </html:div>
+      <html:details class="sideline-details">
+        <html:summary>材料来源与使用方式</html:summary>
+        <html:ul class="sideline-note">
+          <html:li>侧栏输入区「＋」菜单可加入当前页或全文、子笔记检索结果、文本或图片文件。</html:li>
+          <html:li>PDF 选区可从划词弹窗选择「加入对话」。</html:li>
+          <html:li>也可粘贴文件路径、zotero:// 链接、DOI 或 arXiv 号。</html:li>
+          <html:li>图片按默认通道交给当前 Agent 或视觉 API；扫描页及取文失败的页面会在材料明细中列出，可点击重试。</html:li>
+        </html:ul>
+      </html:details>
+      <html:p class="sideline-hint">修改侧栏启用开关后，重启 Zotero 生效。</html:p>
+    </html:section>
+    <html:section class="sideline-card">
+      <html:div class="sideline-heading"><html:h3>界面与保存</html:h3></html:div>
+      <html:div class="sideline-grid">
+        <html:div class="sideline-field">
+          <html:label for="sideline-note-heading">笔记标题</html:label>
+          <html:input id="sideline-note-heading" type="text" preference="extensions.zotero.sideline.noteHeading" placeholder="Sideline"/>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-reader-templates">划词面板模板 ID</html:label>
+          <html:input id="sideline-reader-templates" type="text" preference="extensions.zotero.sideline.readerTemplates"/>
+          <html:small class="sideline-hint">多个 ID 用英文逗号分隔。</html:small>
+        </html:div>
+      </html:div>
+      <html:label class="sideline-check" for="sideline-reader-enabled">
+        <html:input id="sideline-reader-enabled" type="checkbox" preference="extensions.zotero.sideline.readerEnabled"/>
+        
+        
+        启用 PDF 划词面板
+      
+      
+      </html:label>
+      <html:label class="sideline-check" for="sideline-annotation-write">
+        <html:input id="sideline-annotation-write" type="checkbox" preference="extensions.zotero.sideline.readerAnnotationWrite"/>
+        
+        
+        允许把划词回答写回为 PDF 批注
+      
+      
+      </html:label>
+      <html:div class="sideline-grid">
+        <html:div class="sideline-field">
+          <html:label for="sideline-annotation-color">批注颜色</html:label>
+          <html:input id="sideline-annotation-color" type="text" preference="extensions.zotero.sideline.readerAnnotationColor" placeholder="#ffd400"/>
+          <html:small class="sideline-hint">填写十六进制颜色，如 #ffd400。</html:small>
+        </html:div>
+        <html:div class="sideline-field">
+          <html:label for="sideline-highlight-max">重点高亮最多条数</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-highlight-max" type="number" preference="extensions.zotero.sideline.highlightMaxItems" min="1" step="1" placeholder="12"/>
+            <html:span class="sideline-unit">条</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 12。</html:small>
+        </html:div>
+      </html:div>
+      <html:details class="sideline-details">
+        <html:summary>批注与重点预览说明</html:summary>
+        <html:ul class="sideline-note">
+          <html:li>批注开关只控制划词面板的「存为批注」。</html:li>
+          <html:li>侧栏「预览并标记重点」逐条定位并预览，勾选确认后写入，不受上方开关控制。</html:li>
+          <html:li>定位坐标由插件从 PDF 文本计算；不采信模型提供的坐标。</html:li>
+          <html:li>清空会话不会删除已经写入的笔记或批注。</html:li>
+        </html:ul>
+      </html:details>
+      <html:label class="sideline-check" for="sideline-persist-sessions">
+        <html:input id="sideline-persist-sessions" type="checkbox" preference="extensions.zotero.sideline.persistSessions"/>
+        
+        
+        保存会话（该条目的 JSON 附件）
+      
+      
+      </html:label>
+      <html:div class="sideline-grid">
+        <html:div class="sideline-field">
+          <html:label for="sideline-max-messages">保存的最多消息数</html:label>
+          <html:div class="sideline-unit-field">
+            <html:input id="sideline-max-messages" type="number" preference="extensions.zotero.sideline.maxStoredMessages" min="1" step="1" placeholder="60"/>
+            <html:span class="sideline-unit">条</html:span>
+          </html:div>
+          <html:small class="sideline-hint">默认 60。</html:small>
+        </html:div>
+      </html:div>
+      <html:details class="sideline-details">
+        <html:summary>会话保存说明</html:summary>
+        <html:ul class="sideline-note">
+          <html:li>每篇文献只有一场 Sideline 会话，对应一场 Agent 会话。</html:li>
+          <html:li>会话保存在条目下的 JSON 附件中，随 Zotero 文件同步；不会导出为笔记。</html:li>
+          <html:li>清空本会话会删除对话内容并重置对应的 Agent 会话。</html:li>
+          <html:li>旧版多会话只保留时间最近的一条，其余直接删除。</html:li>
+        </html:ul>
+      </html:details>
+      <html:details class="sideline-details">
+        <html:summary>
+          
+          
+          划词弹窗备用模板（JSON）
+          
+          
+          <html:span id="sideline-fallback-prompts-state" class="sideline-prompt-state">使用内置</html:span>
+        </html:summary>
+        <html:label class="sideline-hint" for="sideline-fallback-prompts">留空使用内置提示词；文本框可向下拖动调整高度。</html:label>
+        <html:textarea id="sideline-fallback-prompts" rows="3" class="sideline-textarea" preference="extensions.zotero.sideline.prompts"/>
+      </html:details>
+      <html:details class="sideline-details">
+        <html:summary>备用模板与高级说明</html:summary>
+        <html:ul class="sideline-note">
+          <html:li>备用模板仅在功能注册表不可用时使用。留空使用内置模板：翻译、解释、概括、摘要表、提问题、术语。</html:li>
+          <html:li>
+            
+            
+            自定义格式为 JSON 数组，每项形如 
+            
+            
+            <html:code>{"name":"名称","text":"指令"}</html:code>
+            
+            
+            ；修改后重新打开标签页生效。
+          
+          
+          </html:li>
+          <html:li>
+            
+            
+            本机接口位于 127.0.0.1:23119：
+            
+            
+            <html:code>GET /sideline/status</html:code>
+            
+            
+            、
+            
+            
+            <html:code>POST /sideline/context</html:code>
+            
+            
+            、
+            
+            
+            <html:code>POST /sideline/chat</html:code>
+            
+            
+            、
+            
+            
+            <html:code>POST /sideline/note</html:code>
+            
+            
+            。
+          
+          
+          </html:li>
+        </html:ul>
+      </html:details>
+      <html:p class="sideline-hint">修改划词面板启用开关后，重启 Zotero 生效。</html:p>
+    </html:section>
+  </html:section>
+</vbox>

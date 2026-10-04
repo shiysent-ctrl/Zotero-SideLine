@@ -1,0 +1,14 @@
+/runtime/
+/.codegraph/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+# Local packages, reports and credentials never belong in the source repository.
+*.xpi
+*.zip
+*.log
+.env
+.env.*
+auth.json
+credentials.json

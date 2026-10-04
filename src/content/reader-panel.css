@@ -1,0 +1,1058 @@
+/*
+ * Zotero Sideline 阅读器侧栏样式。
+ *
+ * 设计取向（0.7.0）：配色一律取自 Zotero 阅读器自己的主题变量（resource/reader/reader.css
+ * 在 :root 上定义了 --material-* / --fill-* / --accent-* / --color-*），这样面板与侧栏同色、
+ * 深浅色跟随「设置 → 外观」而不是只看系统主题；排版沿用 Zotero 的字体字号设置
+ * （--font-family / --font-size）。消息区是现代对话风：用户消息右对齐气泡、助手回答通栏、
+ * 每条回答只保留一个「⋯」按钮。
+ * 只使用自有类名，不改动 Zotero 自身的 #sidebarContainer/#sidebarContent 规则；
+ * 激活时给 body 加 sideline-panel-open，由这里决定面板是否显示。
+ *
+ * 兼容说明：早期版本用的 .sideline-msg* / .sideline-text / .sideline-highlights /
+ * .sideline-material* 等类名仍在使用（气泡与几个预览面板），这里一并保留样式。
+ *
+ * 对话皮肤（0.7.1）：层次改由「面」承担——浮起面 + 极浅描边，不再靠分隔线堆叠；
+ * 只有主操作（发送）用强调色实心，其余一律幽灵态 + 120ms 过渡；留白放大，但
+ * 侧栏可能被拖到很窄，所以面板不设置固定最小宽度；横向内边距不超过 12px，
+ * 每行控件都允许收缩或换行。
+ * 所有颜色只用 :root 变量或中性 rgba；深浅色完全由 Zotero 主题变量负责，因此这里
+ * 不写任何「跟随系统深浅色」的媒体查询分支。
+ */
+
+:root {
+	/* 面板底色跟侧栏一致；弹出层、代码块用更亮的 surface */
+	--sl-bg: var(--material-sidepane, #f2f2f2);
+	--sl-surface: var(--material-background, #fff);
+	--sl-bg-soft: var(--fill-quinary, rgba(0, 0, 0, .05));
+	--sl-bg-user: var(--accent-blue10, rgba(64, 114, 229, .12));
+	--sl-text: var(--fill-primary, #1f2328);
+	/*
+	 * 次要文字：Zotero 的 --fill-secondary 在浅色侧栏上只有约 3.9:1 对比度，
+	 * 用在 11.5px 的小字（状态行、材料详情、角色标签）上偏灰。
+	 * 这里用 --fill-primary 按 64% 混合，深浅两套主题下都约 4.5:1 以上（WCAG AA 正文阈值）；
+	 * 不支持 color-mix 的旧版 Gecko 会忽略第二行，自动回退到 --fill-secondary。
+	 */
+	--sl-muted: var(--fill-secondary, #6b7280);
+	--sl-muted: color-mix(in srgb, var(--fill-primary, #1f2328) 64%, transparent);
+	--sl-border: var(--color-border50, rgba(0, 0, 0, .08));
+	--sl-border-strong: var(--color-border, rgba(0, 0, 0, .15));
+	--sl-accent: var(--accent-blue, #4072e5);
+	--sl-accent-soft: var(--accent-blue10, rgba(64, 114, 229, .12));
+	--sl-danger: var(--accent-red, #db2c3a);
+	--sl-radius: 12px;
+	--sl-radius-sm: 8px;
+	/* 对话皮肤补充：滚动条配色、hover/active 面、危险浅底、统一过渡 */
+	--sl-bg-active: var(--fill-quarternary, rgba(0, 0, 0, .09));
+	/* 危险浅底：--sl-danger 已是未解析的变量引用，color-mix 失败时整条声明无效，
+	   这里再给一份纯中性兜底（Zotero 10 用的 Gecko 支持 color-mix，兜底只为保险） */
+	--sl-danger-soft: var(--fill-quinary, rgba(0, 0, 0, .05));
+	--sl-scrollbar: var(--color-scrollbar, rgba(128, 128, 128, .45));
+	--sl-transition: 120ms ease;
+}
+
+#sideline-panel {
+	display: none;
+}
+
+body.sideline-panel-open #sideline-panel {
+	display: flex;
+}
+
+body.sideline-panel-open #sidebarContent {
+	visibility: hidden;
+}
+
+#sideline-panel {
+	position: absolute;
+	top: 41px;
+	bottom: 0;
+	inset-inline-start: 0;
+	width: var(--sidebar-width);
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+	z-index: 12;
+	flex-direction: column;
+	background: var(--sl-bg);
+	color: var(--sl-text);
+	font-family: var(--font-family, inherit);
+	font-size: var(--font-size, 13px);
+	line-height: 1.65;
+	scrollbar-width: thin;
+	scrollbar-color: var(--sl-scrollbar) transparent;
+	border-inline-end: 1px solid var(--sl-border-strong);
+}
+
+/* 滚动容器统一细滚动条（Firefox 的 scrollbar-color 不继承，必须逐个写） */
+.sl-messages,
+.sl-context-list,
+.sideline-reader-answer {
+	scrollbar-width: thin;
+	scrollbar-color: var(--sl-scrollbar) transparent;
+}
+
+/* ---- 顶栏：标题与会话操作菜单 ---- */
+.sl-head {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 10px;
+	min-height: 40px;
+	border-bottom: 1px solid var(--sl-border);
+	flex: 0 0 auto;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.sl-title {
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: .2px;
+	color: var(--sl-text);
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sl-head > .sl-icon-btn {
+	margin-inline-start: auto;
+}
+
+.sl-totals {
+	flex: 0 0 auto;
+	margin-inline-start: auto;
+	font-size: 11px;
+	color: var(--sl-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 50%;
+	text-align: end;
+}
+
+/* ---- 通用控件 ---- */
+.sl-icon-btn {
+	height: 26px;
+	min-width: 26px;
+	padding: 0 6px;
+	font: inherit;
+	line-height: 1;
+	color: inherit;
+	/* 0.8.1：平时就带可见底色与边框（用户反馈"有些按键看不出是按键"），hover 再深一档 */
+	background: var(--sl-bg-soft);
+	border: 1px solid var(--sl-border);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background var(--sl-transition), border-color var(--sl-transition);
+}
+
+.sl-icon-btn:hover {
+	background: var(--fill-quarternary, rgba(0, 0, 0, .09));
+	border-color: var(--sl-border-strong, var(--sl-border));
+}
+
+.sl-icon-btn:active {
+	background: var(--sl-bg-active);
+}
+
+.sl-icon-btn:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--sl-accent-soft);
+}
+
+.sl-btn {
+	height: 28px;
+	padding: 0 12px;
+	font: inherit;
+	color: inherit;
+	background: transparent;
+	border: 1px solid var(--sl-border);
+	border-radius: 9px;
+	cursor: pointer;
+	transition: background var(--sl-transition), border-color var(--sl-transition);
+}
+
+.sl-btn:hover {
+	background: var(--sl-bg-active);
+}
+
+.sl-btn.sl-primary {
+	background: var(--sl-accent);
+	border: none;
+	border-radius: 999px;
+	padding: 0 14px;
+	color: #fff;
+	font-weight: 600;
+}
+
+.sl-btn.sl-primary:hover {
+	background: var(--sl-accent);
+	filter: brightness(1.06);
+}
+
+.sl-btn:disabled,
+.sl-icon-btn:disabled {
+	opacity: .5;
+	cursor: default;
+}
+
+/* 主按钮禁用时不提亮，保持「不可点」的观感 */
+.sl-btn.sl-primary:disabled {
+	background: var(--sl-accent);
+	filter: none;
+}
+
+.sl-link {
+	font: inherit;
+	font-size: 12px;
+	color: var(--sl-accent);
+	background: none;
+	border: none;
+	padding: 0 2px;
+	cursor: pointer;
+	text-decoration: underline dotted;
+	transition: color var(--sl-transition);
+}
+
+.sl-link:hover {
+	text-decoration: underline;
+}
+
+/* ---- 上下文条（材料） ---- */
+.sl-context-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	font-size: 12px;
+	color: var(--sl-muted);
+	border-bottom: 1px solid var(--sl-border);
+	flex: 0 0 auto;
+}
+
+.sl-context-summary {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sl-context-list {
+	flex: 0 0 auto;
+	max-height: 34%;
+	overflow: auto;
+	padding: 4px 10px 10px;
+	border-bottom: 1px solid var(--sl-border);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+/* 材料条目做成卡片：面 + 极浅描边，靠面分层而不是靠分割线 */
+.sl-context-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	padding: 6px 8px;
+	border-radius: 10px;
+	background: var(--sl-surface);
+	border: 1px solid var(--sl-border);
+}
+
+.sl-context-item-main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.sl-context-item-label {
+	font-weight: 600;
+	font-size: 12px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sl-context-item-detail {
+	font-size: 11.5px;
+	color: var(--sl-muted);
+	word-break: break-word;
+}
+
+/* 失败材料：危险色浅底 + 左侧竖条；color-mix 不可用时退化成中性浅底（上面那份变量值） */
+.sl-context-item-error {
+	background: var(--sl-danger-soft);
+	background: color-mix(in srgb, var(--sl-danger) 10%, transparent);
+	border-inline-start: 2px solid var(--sl-danger);
+}
+
+.sl-context-item-error .sl-context-item-detail {
+	color: var(--sl-danger);
+}
+
+/* ---- 消息区 ---- */
+.sl-messages {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: 14px 12px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.sideline-msg {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-width: 100%;
+}
+
+.sideline-msg-user {
+	align-items: flex-end;
+}
+
+/* 现代聊天不在用户消息上标角色 */
+.sideline-msg-user .sideline-role {
+	display: none;
+}
+
+.sideline-role {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: .3px;
+	color: var(--sl-muted);
+	padding: 0 2px 4px;
+}
+
+.sideline-text {
+	overflow-wrap: anywhere;
+	font-size: inherit;
+	user-select: text;
+	-moz-user-select: text;
+	cursor: text;
+}
+
+/* 宿主可能对正文后代禁用选择，显式恢复段落、公式与代码中的文字选择。 */
+.sideline-text * {
+	user-select: text;
+	-moz-user-select: text;
+}
+
+/* 用户气泡：右下角收口，像发出的消息 */
+.sideline-msg-user .sideline-text {
+	background: var(--sl-bg-user);
+	border-radius: 14px 14px 4px 14px;
+	padding: 8px 12px;
+	max-width: 86%;
+	white-space: pre-wrap;
+}
+
+/* 助手回答做成卡片：通栏、留白更大 */
+.sideline-msg-assistant .sideline-text {
+	background: var(--sl-surface);
+	border: 1px solid var(--sl-border);
+	border-radius: 14px;
+	padding: 10px 12px;
+}
+
+.sideline-text > *:first-child {
+	margin-top: 0;
+}
+
+.sideline-text > *:last-child {
+	margin-bottom: 0;
+}
+
+.sideline-text p {
+	margin: 0 0 .65em;
+}
+
+.sideline-text h1,
+.sideline-text h2,
+.sideline-text h3,
+.sideline-text h4 {
+	margin: .9em 0 .45em;
+	line-height: 1.35;
+}
+
+.sideline-text h1 {
+	font-size: 1.25em;
+}
+
+.sideline-text h2 {
+	font-size: 1.15em;
+}
+
+.sideline-text h3 {
+	font-size: 1.05em;
+}
+
+.sideline-text h4 {
+	font-size: 1em;
+}
+
+.sideline-text ul,
+.sideline-text ol {
+	margin: .3em 0 .65em;
+	padding-inline-start: 1.25em;
+}
+
+.sideline-text li {
+	margin: 3px 0;
+}
+
+.sideline-text blockquote {
+	margin: .5em 0;
+	padding: 2px 0 2px 10px;
+	border-inline-start: 2px solid var(--sl-border-strong);
+	color: var(--sl-muted);
+}
+
+.sideline-text code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: .92em;
+	background: var(--sl-bg-soft);
+	border-radius: 5px;
+	padding: 1px 5px;
+}
+
+/* 代码块：浮起面 + 横向滚动，不折行（折行会破坏对齐） */
+.sideline-text pre {
+	background: var(--sl-surface);
+	border: 1px solid var(--sl-border);
+	border-radius: 10px;
+	padding: 10px 12px;
+	margin: .6em 0;
+	overflow: auto;
+	white-space: pre;
+	scrollbar-width: thin;
+	scrollbar-color: var(--sl-scrollbar) transparent;
+}
+
+.sideline-text pre code {
+	background: none;
+	padding: 0;
+}
+
+.sideline-text table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: .6em 0;
+	font-size: .95em;
+}
+
+.sideline-text th,
+.sideline-text td {
+	border: 1px solid var(--sl-border);
+	padding: 4px 6px;
+	text-align: start;
+}
+
+.sideline-text th {
+	background: var(--sl-bg-soft);
+}
+
+.sideline-text hr {
+	border: none;
+	border-top: 1px solid var(--sl-border);
+	margin: 1em 0;
+}
+
+.sideline-text a {
+	color: var(--sl-accent);
+	text-decoration: none;
+}
+
+.sideline-text a:hover {
+	text-decoration: underline;
+}
+
+/* 每条回答只保留一个「⋯」，默认半隐，悬停或聚焦时显形 */
+.sideline-tools {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	height: 22px;
+	margin-top: -2px;
+}
+
+.sl-msg-more {
+	font: inherit;
+	line-height: 1;
+	color: var(--sl-text);
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	padding: 0 6px;
+	cursor: pointer;
+	opacity: .68;
+	transition: opacity var(--sl-transition), background var(--sl-transition);
+}
+
+.sideline-msg:hover .sl-msg-more,
+.sl-msg-more:focus,
+.sl-msg-more:focus-visible {
+	opacity: 1;
+}
+
+.sl-msg-more:hover {
+	background: var(--sl-bg-soft);
+}
+
+/* ---- 检索结果 / 候选列表 ---- */
+.sl-hint-list {
+	flex: 0 0 auto;
+	max-height: 30%;
+	overflow: auto;
+	padding: 6px 10px 8px;
+	border-top: 1px solid var(--sl-border);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--sl-scrollbar) transparent;
+}
+
+.sl-hint-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	color: var(--sl-muted);
+}
+
+.sl-hint-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 6px 8px;
+	border-radius: 10px;
+	background: var(--sl-surface);
+	border: 1px solid var(--sl-border);
+}
+
+.sl-hint-snippet {
+	font-size: 11.5px;
+	color: var(--sl-muted);
+	word-break: break-word;
+}
+
+/* ---- 输入区：整体是浮起面，textarea 是里面那块圆角输入槽 ---- */
+.sl-composer {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 8px 10px 10px;
+	background: var(--sl-surface);
+	border-top: 1px solid var(--sl-border);
+}
+
+.sl-pending {
+	position: absolute;
+	inset-inline-start: 8px;
+	top: 7px;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+	max-width: calc(100% - 20px);
+}
+
+.sl-chip {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 2px 9px;
+	border-radius: 999px;
+	background: var(--sl-accent-soft);
+	color: var(--sl-accent);
+	max-width: 170px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sl-chip-x {
+	font: inherit;
+	line-height: 1;
+	color: var(--sl-muted);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 0 4px;
+	transition: color var(--sl-transition);
+}
+
+.sl-chip-x:hover {
+	color: var(--sl-danger);
+}
+
+.sl-input-shell {
+	position: relative;
+	width: 100%;
+	min-width: 0;
+}
+
+.sl-composer textarea {
+	width: 100%;
+	min-height: 68px;
+	max-height: 160px;
+	resize: none;
+	font: inherit;
+	line-height: 1.55;
+	color: inherit;
+	background: var(--sl-bg-soft);
+	border: 1px solid transparent;
+	border-radius: 12px;
+	padding: 8px 10px;
+	box-sizing: border-box;
+	transition: background var(--sl-transition), border-color var(--sl-transition), box-shadow var(--sl-transition);
+}
+
+.sl-input-shell.has-pending textarea {
+	padding-inline-start: var(--sl-pending-offset, 120px);
+}
+
+.sl-composer textarea:focus {
+	outline: none;
+	background: var(--sl-surface);
+	border-color: var(--sl-accent);
+	box-shadow: 0 0 0 3px var(--sl-accent-soft);
+}
+
+.sl-status {
+	font-size: 11.5px;
+	color: var(--sl-muted);
+	min-height: 14px;
+	padding: 0 2px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.sl-status > span {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.sl-status-action {
+	flex: 0 0 auto;
+	border: none;
+	background: none;
+	color: var(--sl-accent);
+	font: inherit;
+	font-weight: 600;
+	padding: 0;
+	cursor: pointer;
+}
+
+.sl-status-action:hover {
+	text-decoration: underline;
+}
+
+.sl-math-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: .25em 0;
+}
+
+.sl-math-display > .katex-display {
+	margin: .4em 0;
+}
+
+.sl-status.sideline-error {
+	color: var(--sl-danger);
+}
+
+.sl-composer-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+/* 功能入口是按钮 + 向上展开的菜单（原生 select 的箭头方向不可控，data: 背景图会被 CSP 拦） */
+.sl-function {
+	height: 40px;
+	flex: 0 1 auto;
+	min-width: 0;
+	max-width: 40%;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font: inherit;
+	color: inherit;
+	background: var(--sl-bg-soft);
+	border: 1px solid var(--sl-border);
+	border-radius: 999px;
+	padding: 0 12px;
+	cursor: pointer;
+	transition: background var(--sl-transition), border-color var(--sl-transition);
+}
+
+.sl-function:hover,
+.sl-function:focus {
+	background: var(--sl-bg-soft);
+	border-color: var(--sl-border);
+}
+
+/* 朝上的三角：纯 border 画，不含任何外部资源，因此不受 CSP 影响，颜色跟随主题 */
+.sl-function-arrow {
+	width: 0;
+	height: 0;
+	border-inline-start: 4px solid transparent;
+	border-inline-end: 4px solid transparent;
+	border-bottom: 5px solid currentColor;
+	opacity: .7;
+}
+
+.sl-function-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* 材料与检索共用 36px 点击区，18px 图标；保持输入区主操作的视觉层次。 */
+.sl-composer-row .sl-icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	padding: 0;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	font-size: 18px;
+}
+
+.sl-composer-row .sl-icon-btn:hover {
+	background: var(--sl-bg-soft);
+}
+
+.sl-composer-row .sl-icon-btn:active {
+	background: var(--sl-bg-active);
+}
+
+/* 提示不占布局空间，也不拦截按钮点击；失去悬停/焦点时立即隐藏。 */
+.sl-composer-tool {
+	position: relative;
+	display: inline-flex;
+	flex: 0 0 auto;
+}
+
+.sl-tooltip {
+	position: absolute;
+	bottom: calc(100% + 6px);
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 21;
+	padding: 4px 8px;
+	border: 1px solid var(--sl-border);
+	border-radius: 6px;
+	background: var(--sl-surface);
+	color: var(--sl-text);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, .16);
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: nowrap;
+	pointer-events: none;
+	visibility: hidden;
+	opacity: 0;
+}
+
+.sl-composer-tool > .sl-icon-btn:hover + .sl-tooltip,
+.sl-composer-tool > .sl-icon-btn:focus-visible + .sl-tooltip {
+	visibility: visible;
+	opacity: 1;
+	transition: opacity 120ms .5s, visibility 0s .5s;
+}
+
+.sl-composer-tool > .sl-icon-btn:focus-visible + .sl-tooltip {
+	transition-delay: 0s;
+}
+
+/* 发送/停止靠右；停止按钮与发送并排时不再各占一个 auto 边距 */
+.sl-composer-row .sl-btn {
+	height: 40px;
+	min-width: 56px;
+	padding-inline: 12px;
+	margin-inline-start: auto;
+}
+
+.sl-composer-row .sl-icon-btn svg {
+	width: 18px;
+	height: 18px;
+}
+
+.sl-composer-row .sl-btn + .sl-btn {
+	margin-inline-start: 0;
+}
+
+/* 按钮宽度固定不被压缩，让可压缩的功能下拉去承担窄侧栏的余量 */
+.sl-composer-row .sl-btn,
+.sl-composer-row .sl-icon-btn {
+	flex: 0 0 auto;
+}
+
+/* 键盘可达性：所有可点控件统一焦点环（鼠标点击不显示，Tab 导航才显示） */
+.sl-btn:focus-visible,
+.sl-link:focus-visible,
+.sl-chip-x:focus-visible,
+.sl-menu-item:focus-visible,
+.sl-function:focus-visible,
+.sl-icon-btn:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--sl-accent-soft), 0 0 0 1px var(--sl-accent);
+}
+
+/* 会话检索：放大镜图标平时是次要色，悬停时提亮 */
+.sl-search-btn {
+	color: var(--sl-muted);
+	transition: color var(--sl-transition), background var(--sl-transition);
+}
+
+.sl-search-btn:hover {
+	color: var(--sl-text);
+}
+
+/* 添加材料：回形针与放大镜共用颜色和悬停反馈。 */
+.sl-add-btn {
+	color: var(--sl-muted);
+	transition: color var(--sl-transition), background var(--sl-transition);
+}
+
+.sl-add-btn:hover {
+	color: var(--sl-text);
+}
+
+/* ---- 弹出菜单 ---- */
+.sl-menu {
+	position: absolute;
+	background: var(--sl-surface);
+	border: 1px solid var(--sl-border);
+	border-radius: var(--sl-radius);
+	box-shadow: 0 10px 28px rgba(0, 0, 0, .16), 0 1px 2px rgba(0, 0, 0, .06);
+	padding: 5px;
+	min-width: 190px;
+	display: flex;
+	flex-direction: column;
+	z-index: 20;
+}
+
+.sl-menu-item {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 1px;
+	width: 100%;
+	text-align: start;
+	font: inherit;
+	color: inherit;
+	background: transparent;
+	border: none;
+	border-radius: 8px;
+	padding: 7px 10px;
+	cursor: pointer;
+	transition: background var(--sl-transition);
+}
+
+.sl-menu-item:hover,
+.sl-menu-item:focus-visible {
+	background: var(--sl-bg-soft);
+}
+
+.sl-menu-item > span:first-child {
+	font-size: 13px;
+}
+
+.sl-menu-item:disabled {
+	opacity: .55;
+	cursor: default;
+}
+
+.sl-menu-item:disabled:hover {
+	background: transparent;
+}
+
+.sl-menu-detail {
+	font-size: 11px;
+	color: var(--sl-muted);
+	margin-top: 1px;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sl-menu-sep {
+	height: 1px;
+	margin: 5px 4px;
+	background: var(--sl-border);
+}
+
+/* ---- 回答里的页码锚点与引用块 ---- */
+.sideline-pageref {
+	color: var(--sl-accent);
+	cursor: pointer;
+	text-decoration: underline dotted;
+	transition: background var(--sl-transition);
+}
+
+.sideline-pageref:hover {
+	text-decoration: underline;
+	background: var(--sl-bg-soft);
+}
+
+.sideline-quote-link {
+	color: var(--sl-accent);
+	cursor: pointer;
+	text-decoration: underline dotted;
+	transition: background var(--sl-transition);
+}
+
+.sideline-quote-link:hover {
+	text-decoration: underline;
+	background: var(--sl-bg-soft);
+}
+
+.sideline-cite {
+	/* 0.8.1：引用卡片用浅强调色底，和输入框/回答卡片区分开 */
+	background: var(--sl-accent-soft);
+	border: 1px solid transparent;
+	border-radius: 10px;
+	padding: 6px 8px;
+	margin: 4px 0;
+	font-size: 11.5px;
+	color: var(--sl-muted);
+}
+
+/* ---- 高亮 / 总结 / 整理笔记 的预览面板 ---- */
+.sideline-highlights {
+	border: 1px solid var(--sl-border);
+	border-radius: var(--sl-radius);
+	background: var(--sl-surface);
+	padding: 10px;
+	margin-top: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+/* 每条高亮是纵向小卡片：标签在上、细节在下、勾选框在左 */
+.sideline-highlight-row {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 4px;
+	padding: 6px 8px;
+	border-radius: 10px;
+	background: var(--sl-bg-soft);
+}
+
+.sideline-highlight-row input[type="checkbox"] {
+	margin-top: 4px;
+}
+
+.sideline-panel-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* 总结/高亮面板的按钮不在 .sl-btn 类下，这里补一份同样的中性按钮风格 */
+.sideline-panel-row button {
+	height: 28px;
+	padding: 0 12px;
+	font: inherit;
+	color: inherit;
+	background: var(--sl-bg-soft);
+	border: 1px solid var(--sl-border);
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background var(--sl-transition), border-color var(--sl-transition);
+}
+
+.sideline-panel-row button:hover {
+	background: var(--sl-bg-active);
+}
+
+.sideline-panel-row button:disabled {
+	opacity: .5;
+	cursor: default;
+}
+
+.sideline-material-main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.sideline-material-label {
+	font-weight: 600;
+	font-size: 12px;
+}
+
+.sideline-material-detail {
+	font-size: 11.5px;
+	color: var(--sl-muted);
+	word-break: break-word;
+}
+
+.sideline-material-error .sideline-material-detail {
+	color: var(--sl-danger);
+}
+
+.sideline-material-link {
+	color: var(--sl-accent);
+	cursor: pointer;
+	text-decoration: underline dotted;
+}
+
+.sideline-material-link:hover {
+	text-decoration: underline;
+}
+
+.sideline-hint {
+	font-size: 11.5px;
+	color: var(--sl-muted);
+}
+
+.sideline-error {
+	color: var(--sl-danger);
+}
+
+/* ---- 阅读器工具栏入口 ---- */
+.sideline-panel-toggle.toolbar-button.active {
+	background-color: var(--fill-quinary, rgba(127, 127, 127, .3));
+}
+
+/* 空状态：只有一条提示时居中显示（:has 不可用的旧 Gecko 忽略这条，仍按普通提示显示） */
+.sl-messages:has(> .sideline-hint:only-child) {
+	justify-content: center;
+}
+
+.sl-messages:has(> .sideline-hint:only-child) .sideline-hint {
+	padding: 0 16px 28px;
+	line-height: 1.8;
+	text-align: center;
+}
+
+/*
+ * hidden 属性必须真正生效。
+ * 上面几处容器都写成 display:flex（作者样式），会盖掉浏览器默认的 [hidden]{display:none}，
+ * 不补这条的话「隐藏」的元素其实一直显示——空材料条、空检索列表都会留在面板上。
+ */
+#sideline-panel [hidden] {
+	display: none !important;
+}
